@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Photography Portfolio — Your Name</title>
+  <meta name="description" content="Portfolio website for a photographer. Showcase categories, view lightbox, and book a session." />
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa6b2;
+      --accent:#ff6b6b;
+      --glass: rgba(255,255,255,0.04);
+      --radius:14px;
+      --max-width:1100px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg) 0%, #071024 100%);
+      color:#e6eef7;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px 20px;
+      display:flex;
+      justify-content:center;
+      font-size:16px;
+    }
+
+    .wrap{width:100%;max-width:var(--max-width)}
+
+    header{
+      display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:28px
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff9a9a);display:grid;place-items:center;font-weight:700;color:#081017}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:0.95rem}
+
+    .actions{display:flex;gap:10px}
+    .btn{background:var(--glass);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;color:inherit}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#ff9a9a);color:#071017;font-weight:700;border:none}
+
+    /* Filters */
+    .filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 22px}
+    .chip{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
+    .chip.active{background:rgba(255,255,255,0.06);color:var(--accent);border-color:rgba(255,107,107,0.18);font-weight:600}
+
+    /* Gallery grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .card{background:var(--card);border-radius:12px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .card img{width:100%;height:220px;object-fit:cover;display:block;transition:transform .35s ease}
+    .card:hover img{transform:scale(1.04)}
+    .card .meta{padding:10px}
+    .category{font-size:0.8rem;color:var(--muted)}
+    .title{margin:4px 0 0;font-weight:600}
+
+    /* Lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(2,6,23,0.8);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}
+    .lightbox.show{display:flex}
+    .lightbox .box{max-width:1100px;width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(2,6,23,0.6);}
+    .lightbox img{max-height:70vh;width:100%;height:auto;border-radius:8px;display:block}
+    .lightbox .info{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .close{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px}
+
+    /* Booking modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;z-index:70}
+    .modal.show{display:flex}
+    .modal .dialog{width:100%;max-width:700px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .form-row{display:flex;gap:10px;margin-bottom:12px}
+    .form-row .field{flex:1}
+    label{display:block;font-size:0.80rem;margin-bottom:6px;color:var(--muted)}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    textarea{min-height:100px}
+    .error{color:#ffb3b3;font-size:0.85rem;margin-top:6px}
+
+    /* Responsive tweaks */
+    @media (max-width:600px){
+      .card img{height:160px}
+      .logo{width:46px;height:46px}
+      header{gap:8px}
+      .form-row{flex-direction:column}
+    }
+
+    footer{margin-top:28px;color:var(--muted);font-size:0.9rem;text-align:center}
+
+    /* tiny transition for buttons */
+    .btn, .chip{transition:all .18s ease}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">PH</div>
+        <div>
+          <h1>Your Name — Photographer</h1>
+          <p class="lead">Storytelling through light. Available for portraits, events, and landscapes.</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="view-all-btn">View Portfolio</button>
+        <button class="btn primary" id="book-btn">Book a Session</button>
+      </div>
+    </header>
+
+    <nav class="filters" id="filters"></nav>
+
+    <main>
+      <section class="grid" id="gallery"></section>
+    </main>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <div class="box">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div id="lb-title" style="font-weight:700"></div>
+          <div>
+            <button class="btn" id="lb-download">Download</button>
+            <button class="close" id="lb-close">Close</button>
+          </div>
+        </div>
+        <img id="lb-img" src="" alt="">
+        <div class="info">
+          <div class="category" id="lb-cat"></div>
+          <div class="muted" id="lb-desc">High-resolution available upon request.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="modal">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h2 id="modal-title">Book a Session</h2>
+          <button class="close" id="modal-close">✕</button>
+        </div>
+
+        <form id="booking-form">
+          <div class="form-row">
+            <div class="field">
+              <label for="name">Full name</label>
+              <input id="name" name="name" required />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" />
+            </div>
+            <div class="field">
+              <label for="date">Preferred date</label>
+              <input id="date" name="date" type="date" />
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label for="package">Package</label>
+            <select id="package" name="package">
+              <option>Standard — 1 hour</option>
+              <option>Premium — 2 hours</option>
+              <option>Wedding — Full day</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" placeholder="Tell me about the shoot..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button type="button" class="btn" id="modal-cancel">Cancel</button>
+            <button type="submit" class="btn primary">Send Booking</button>
+          </div>
+          <p id="form-msg" style="margin-top:10px;color:var(--muted)"></p>
+        </form>
+      </div>
+    </div>
+
+    <footer>
+      © <span id="yr"></span> Your Name — Available worldwide • <span style="color:var(--muted)">Built with HTML • CSS • JS</span>
+    </footer>
+  </div>
+
+  <script>
+    // Data - replace the src URLs with your own photos
+    const PHOTOS = [
+      {id:1, title:'Mountains at Dawn', category:'Landscape', src:'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1600&q=80'},
+      {id:2, title:'City Lights', category:'Urban', src:'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1600&q=80'},
+      {id:3, title:'Portrait - Olivia', category:'Portrait', src:'https://images.unsplash.com/photo-1531123414780-fb7f4123f0e2?w=1600&q=80'},
+      {id:4, title:'Wedding Couple', category:'Events', src:'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=1600&q=80'},
+      {id:5, title:'Forest Path', category:'Landscape', src:'https://images.unsplash.com/photo-1501785888041-af3ef285b470&ixlib=rb-1.2.1&q=80&w=1600'},
+      {id:6, title:'Street Portrait', category:'Urban', src:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1600&q=80'},
+      {id:7, title:'Studio Shot', category:'Portrait', src:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1&w=1600&q=80'},
+      {id:8, title:'Concert', category:'Events', src:'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?w=1600&q=80'}
+    ];
+
+    const CATEGORIES = ['All','Landscape','Urban','Portrait','Events'];
+
+    // DOM refs
+    const filtersEl = document.getElementById('filters');
+    const galleryEl = document.getElementById('gallery');
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    const lbTitle = document.getElementById('lb-title');
+    const lbCat = document.getElementById('lb-cat');
+    const lbClose = document.getElementById('lb-close');
+    const lbDownload = document.getElementById('lb-download');
+
+    const modal = document.getElementById('modal');
+    const bookBtn = document.getElementById('book-btn');
+    const modalClose = document.getElementById('modal-close');
+    const modalCancel = document.getElementById('modal-cancel');
+    const bookingForm = document.getElementById('booking-form');
+    const formMsg = document.getElementById('form-msg');
+
+    // render filters
+    let active = 'All';
+    function renderFilters(){
+      filtersEl.innerHTML = '';
+      CATEGORIES.forEach(cat=>{
+        const btn = document.createElement('button');
+        btn.className = 'chip' + (cat===active? ' active':'');
+        btn.textContent = cat;
+        btn.onclick = ()=>{ active = cat; updateGallery(); renderFilters(); window.scrollTo({top:0,behavior:'smooth'}); };
+        filtersEl.appendChild(btn);
+      });
+    }
+
+    // render gallery
+    function updateGallery(){
+      galleryEl.innerHTML = '';
+      const list = PHOTOS.filter(p => active==='All' || p.category===active);
+      list.forEach(p=>{
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <img loading="lazy" src="${p.src}" alt="${p.title}" />
+          <div class="meta">
+            <div class="category">${p.category}</div>
+            <div class="title">${p.title}</div>
+          </div>
+        `;
+        card.onclick = ()=> openLightbox(p);
+        galleryEl.appendChild(card);
+      });
+      if(list.length===0){
+        galleryEl.innerHTML = '<p style="color:var(--muted)">No photos in this category yet.</p>';
+      }
+    }
+
+    // lightbox
+    function openLightbox(photo){
+      lbImg.src = photo.src;
+      lbImg.alt = photo.title;
+      lbTitle.textContent = photo.title;
+      lbCat.textContent = photo.category;
+      lightbox.classList.add('show');
+      lightbox.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+      lbDownload.onclick = ()=> downloadImage(photo.src, photo.title.replace(/\s+/g,'_'));
+    }
+    function closeLightbox(){
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+      lbImg.src = '';
+    }
+    lbClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e)=>{ if(e.target===lightbox) closeLightbox(); });
+
+    // download helper
+    function downloadImage(url, name){
+      // Use an anchor to download. Note: some cross-origin images may block this.
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name + '.jpg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // booking modal
+    bookBtn.addEventListener('click', ()=>{ modal.classList.add('show'); document.body.style.overflow='hidden'; });
+    modalClose.addEventListener('click', closeModal);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+    function closeModal(){ modal.classList.remove('show'); document.body.style.overflow=''; }
+
+    // form submit (mock)
+    bookingForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      formMsg.textContent = '';
+      const data = new FormData(bookingForm);
+      const payload = Object.fromEntries(data.entries());
+
+      // Basic validation
+      if(!payload.name || !payload.email){
+        formMsg.textContent = 'Please provide name and email.';
+        return;
+      }
+
+      // Simulate sending
+      try{
+        // Replace the fetch URL below with your real endpoint.
+        await fakeNetworkRequest(payload);
+        formMsg.style.color = 'lightgreen';
+        formMsg.textContent = 'Booking request sent — I will reply within 48 hours.';
+        bookingForm.reset();
+        setTimeout(()=>{ closeModal(); formMsg.style.color='var(--muted)'; formMsg.textContent=''; }, 2200);
+      }catch(err){
+        formMsg.style.color = '#ffb3b3';
+        formMsg.textContent = 'Failed to send. Try again later.';
+      }
+    });
+
+    function fakeNetworkRequest(data){
+      return new Promise((res)=> setTimeout(()=>res({ok:true}),900));
+    }
+
+    // init
+    renderFilters();
+    updateGallery();
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // convenience: view-all button scrolls to gallery
+    document.getElementById('view-all-btn').addEventListener('click', ()=>{
+      document.querySelector('main').scrollIntoView({behavior:'smooth'});
+    });
+
+    // keyboard: Esc closes modals
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape'){
+        closeLightbox(); closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
